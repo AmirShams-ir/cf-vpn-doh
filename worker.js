@@ -162,7 +162,9 @@ async function hTOBound(remoteSocket, addressRemote, portRemote, rawClientData, 
 
 	async function retry() {
     const pnlPxIP = globalThis.pathName.split("/")[2];
-    const pnlPxIPs = pnlPxIP ? atob(pnlPxIP).split(",") : void 0;
+    const paddedProxyPath = pnlPxIP ? pnlPxIP.replace(/-/g, "+").replace(/_/g, "/") : "";
+    const decodedProxyPath = paddedProxyPath ? atob(paddedProxyPath.padEnd(Math.ceil(paddedProxyPath.length / 4) * 4, "=")) : "";
+    const pnlPxIPs = decodedProxyPath ? decodedProxyPath.split(",").map(value => value.trim()).filter(Boolean) : void 0;
     const fallbackPool = pnlPxIPs || (globalThis.CLxIP ? globalThis.CLxIP.split(",").map(value => value.trim()).filter(Boolean) : null);
     const rmtPyIP = fallbackPool && fallbackPool.length
       ? fallbackPool[Math.floor(Math.random() * fallbackPool.length)]
@@ -865,7 +867,7 @@ async function generate(){
         let cpath = "%3Fed%3D2048";
 
         if(proxyPool && proxyPool !== defalt_pxip){
-            const pxipath = btoa(proxyPool).replace(/=/g, "%3D");
+            const pxipath = btoa(proxyPool).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
             cpath = fpath[Math.floor(Math.random() * fpath.length)] + "%2F" + pxipath + "%2F%3Fed%3D2048";
         }
 
