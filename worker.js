@@ -770,13 +770,12 @@ var settingsOutput = document.getElementById("settingsOutput");
 var port = document.getElementById("port");
 var fingerprint = document.getElementById("fingerprint");
 var config = document.getElementById("config");
-const darkModeToggle = document.getElementById('darkModeToggle'); 
 function load_defalt(){
 	address.value = defalt_address;
 	host.value = defalt_address;
 	sni.value = defalt_address;
 	pxip.value = defalt_pxip;
-	GetIPs();
+	GetIPs().catch(err => console.error("GetIPs failed", err));
 	darkModeToggle.addEventListener('click', () => {
     const isDarkMode = document.body.classList.toggle('dark-mode');
     localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
@@ -784,16 +783,17 @@ function load_defalt(){
   });
   GetLocalStorage();
   filterAddressSuggestions();
-  ipfamily.addEventListener("change", filterAddressSuggestions);
+  if (ipfamily) ipfamily.addEventListener("change", filterAddressSuggestions);
+  if (custom.checked) { host.disabled = false; sni.disabled = false; } else { host.disabled = true; sni.disabled = true; }
   DetailsBoxShow();
 }
 function cstm(){
     if(custom.checked){
-       host.disabled = "";
-       sni.disabled = "";
+       host.disabled = false;
+       sni.disabled = false;
     }else{
-        host.disabled = "disabled";
-       sni.disabled = "disabled";
+        host.disabled = true;
+       sni.disabled = true;
     }
 }
 
@@ -812,90 +812,163 @@ function chkaddress(){
     }
     cstm();
 }
+function generate(){
+    var caddress = address.value;
+    var cport = port.value;
+    var cfingerprint = '';
+    var chost = '';
+    var csni = '';
+    var cpath = '%3Fed%3D2048';
+
+
+    if(custom.checked){
+    	chost = "&host="+host.value;
+    	csni = "&sni="+sni.value;
+    }
+    if(fingerprint.value != 0){
+    	cfingerprint =  "&fp="+fingerprint.value;
+    }
+    if (pxip.value && pxip.value !== defalt_pxip){                                               
+        var pxipath = (btoa(pxip.value.replace(/ /g, ''))).replace(/=/g, '%3D');
+    	cpath = fpath[Math.floor(Math.random() * fpath.length)]+"%2F"+pxipath+"%2F%3Fed%3D2048";
+    } 
+                                                                                   
+
+config.value = atob("dmxlc3M=")+"://"+defalt_uuid+"@"+caddress+":"+cport+"?encryption=none&security=tls"+chost+""+cfingerprint+"&alpn=h2%2Chttp%2F1.1&type=ws"+csni+"&path=%2F"+cpath+"#%F0%9F%90%B2%20"+defalt_CnfgName;
+}
+
 function splitInputList(value){
-    return (value || "").split(/[\n,;]+/).map(item => item.trim()).filter(Boolean);
+  return (value || "").split(/[\n,;]+/).map(item => item.trim()).filter(Boolean);
 }
 function isIPv4Address(value){
-    return /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/.test(value);
+  return /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/.test(value);
 }
 function isIPv6Address(value){
-    const raw = (value || "").replace(/^\[/, "").replace(/\]$/, "");
-    return raw.includes(":") && /^[0-9a-f:.]+$/i.test(raw);
+  const raw = (value || "").replace(/^\[/, "").replace(/\]$/, "");
+  return raw.includes(":") && /^[0-9a-f:.]+$/i.test(raw);
 }
 function normaliseAddress(value){
-    const raw = (value || "").trim().replace(/^\[/, "").replace(/\]$/, "");
-    return isIPv6Address(raw) ? "[" + raw + "]" : raw;
+  const raw = (value || "").trim().replace(/^\[/, "").replace(/\]$/, "");
+  return isIPv6Address(raw) ? "[" + raw + "]" : raw;
 }
 function filterAddressSuggestions(){
-    if(!ipfamily) return;
-    const family = ipfamily.value;
-    const list = document.getElementById("addresslist");
-    if(!list) return;
-    for(const option of list.options){
-        const type = option.dataset.family || "domain";
-        option.disabled = (family === "ipv4" && type === "ipv6") ||
-                          (family === "ipv6" && type === "ipv4");
-    }
+  if(!ipfamily) return;
+  const family = ipfamily.value;
+  const list = document.getElementById("addresslist");
+  if(!list) return;
+  for(const option of list.options){
+    const type = option.dataset.family || "domain";
+    option.disabled = (family === "ipv4" && type === "ipv6") || (family === "ipv6" && type === "ipv4");
+  }
 }
-async function generate(){
-    const portValue = port.value;
-    let candidates = splitInputList(cleanips.value);
-    if(!candidates.length) candidates = [address.value.trim()].filter(Boolean);
+function chkaddress(){
+  if(address.value !== defalt_address) custom.checked = true;
+  else custom.checked = false;
+  cstm();
+}
+function generate(){
+  var caddress = address.value.trim();
+  var cport = port.value;
+  var cfingerprint = '';
+  var chost = '';
+  var csni = '';
+  var cpath = '%3Fed%3D2048';
 
-    candidates = candidates.filter(candidate => {
-        const raw = candidate.replace(/^\[/, "").replace(/\]$/, "");
-        if(ipfamily.value === "ipv4" && isIPv6Address(raw)) return false;
-        if(ipfamily.value === "ipv6" && isIPv4Address(raw)) return false;
-        return true;
+  // Keep stock behavior: custom Host and SNI apply only when Custom is checked.
+  if(custom.checked){
+    chost = "&host=" + encodeURIComponent(host.value);
+    csni = "&sni=" + encodeURIComponent(sni.value);
+  }
+  if(fingerprint.value != 0){
+    cfingerprint = "&fp=" + encodeURIComponent(fingerprint.value);
+  }
+  var pxipValues = splitInputList(pxip.value);
+  if(pxipValues.length){
+    var pxipath = btoa(pxipValues.join(',')).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    if(pxip.value.trim() !== defalt_pxip){
+      cpath = fpath[Math.floor(Math.random() * fpath.length)] + "%2F" + pxipath + "%2F%3Fed%3D2048";
+    }
+  }
+
+  // Clean IP/Domain values are optional; leave the original Address behavior intact when blank.
+  var cleanCandidates = splitInputList(cleanips.value);
+  if(cleanCandidates.length){
+    cleanCandidates = cleanCandidates.filter(candidate => {
+      const raw = candidate.replace(/^\[/, '').replace(/\]$/, '');
+      if(ipfamily.value === 'ipv4' && isIPv6Address(raw)) return false;
+      if(ipfamily.value === 'ipv6' && isIPv4Address(raw)) return false;
+      return true;
     });
-    if(!candidates.length){
-        alert("No addresses match the selected IP family.");
-        return;
-    }
+    if(!cleanCandidates.length){ alert('No Clean IPs or Domains match the selected IP family.'); return; }
+    config.value = cleanCandidates.map(candidate => {
+      const target = normaliseAddress(candidate);
+      // SNI and Host default to Worker hostname for clean address profiles.
+      const selectedHost = custom.checked ? host.value.trim() : defalt_address;
+      const selectedSni = custom.checked ? sni.value.trim() : defalt_address;
+      return "vless://" + defalt_uuid + "@" + target + ":" + cport +
+        "?encryption=none&security=tls&host=" + encodeURIComponent(selectedHost) +
+        cfingerprint + "&alpn=h2%2Chttp%2F1.1&type=ws&sni=" + encodeURIComponent(selectedSni) +
+        "&path=%2F" + cpath + "#%F0%9F%90%B2%20" + encodeURIComponent(defalt_CnfgName);
+    }).join("\n");
+  } else {
+    config.value = atob("dmxlc3M=")+"://"+defalt_uuid+"@"+caddress+":"+cport+"?encryption=none&security=tls"+chost+cfingerprint+"&alpn=h2%2Chttp%2F1.1&type=ws"+csni+"&path=%2F"+cpath+"#%F0%9F%90%B2%20"+defalt_CnfgName;
+  }
 
-    const fingerprintParam = fingerprint.value != 0 ? "&fp=" + encodeURIComponent(fingerprint.value) : "";
-    const proxyPool = splitInputList(pxip.value).join(",");
-    const configs = [];
-
-    for(const candidate of candidates){
-        const caddress = normaliseAddress(candidate);
-        const useCustomHeaders = custom.checked || caddress !== defalt_address;
-        const effectiveHost = custom.checked && host.value.trim() ? host.value.trim() : defalt_address;
-        const effectiveSni = custom.checked && sni.value.trim() ? sni.value.trim() : defalt_address;
-        const chost = useCustomHeaders ? "&host=" + encodeURIComponent(effectiveHost) : "";
-        const csni = useCustomHeaders ? "&sni=" + encodeURIComponent(effectiveSni) : "";
-        let cpath = "%3Fed%3D2048";
-
-        if(proxyPool && proxyPool !== defalt_pxip){
-            const pxipath = btoa(proxyPool).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-            cpath = fpath[Math.floor(Math.random() * fpath.length)] + "%2F" + pxipath + "%2F%3Fed%3D2048";
-        }
-
-        configs.push(
-          "vless://" + defalt_uuid + "@" + caddress + ":" + portValue +
-          "?encryption=none&security=tls" + chost + fingerprintParam +
-          "&alpn=h2%2Chttp%2F1.1&type=ws" + csni + "&path=%2F" + cpath +
-          "#" + encodeURIComponent("🐉 " + defalt_CnfgName)
-        );
-    }
-
-    config.value = configs.join("\n");
-    const settings = {
-        ip_family: ipfamily.value === "dual" ? "IPv4/IPv6" : ipfamily.value.toUpperCase(),
-        dns_servers: splitInputList(dns.value),
-        doh_endpoint: doh.value.trim(),
-        ech_server_name: echserver.value.trim() || null,
-        clean_ips_or_domains: splitInputList(cleanips.value),
-        proxyip_candidates: splitInputList(pxip.value)
-    };
-    settingsOutput.value = JSON.stringify(settings, null, 2);
-    localStorage.setItem("ipfamily", ipfamily.value);
-    localStorage.setItem("dns", dns.value);
-    localStorage.setItem("doh", doh.value);
-    localStorage.setItem("cleanips", cleanips.value);
-    localStorage.setItem("echserver", echserver.value);
-    localStorage.setItem("pxip", pxip.value);
+  const settings = {
+    ip_family: ipfamily.value === "dual" ? "IPv4/IPv6" : ipfamily.value.toUpperCase(),
+    dns_servers: splitInputList(dns.value),
+    doh_endpoint: doh.value.trim(),
+    ech_server_name: echserver.value.trim() || null,
+    clean_ips_or_domains: cleanCandidates,
+    proxyip_candidates: pxipValues
+  };
+  settingsOutput.value = JSON.stringify(settings, null, 2);
+  for(const id of ["ipfamily","dns","doh","cleanips","echserver","pxip"]){
+    const el = document.getElementById(id);
+    if(el) localStorage.setItem(id, id === "ipfamily" ? el.value : el.value);
+  }
 }
+
+  const closeQR = () => {
+          	 let qrcodeContainer = document.getElementById("qrcode-container");
+          	 qrcodeContainer.style.display = "none";
+          	 qrcodeContainer.innerHTML = "";
+  }
+  const openQR = (id) => {
+            let url = document.getElementById(id).value;
+            if(!url){return;}
+            let qrcodeContainer = document.getElementById("qrcode-container");
+            qrcodeContainer.innerHTML = "";
+            qrcodeContainer.style.display = "flex";
+            let qrcodeDiv = document.createElement("div");
+            qrcodeDiv.className = "qrcode";
+            qrcodeDiv.style.backgroundColor = "#ffffff";
+            new QRCode(qrcodeDiv, {
+                text: url,
+                width: 256,
+                height: 256,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            qrcodeContainer.appendChild(qrcodeDiv);
+   }
+
+   const GetIPs = async () => {
+    document.getElementById('otipdata').innerHTML = document.getElementById('clipdata').innerHTML = '---';
+    const ipResponse = await fetch('https://ipwho.is/' + '?nocache=' + Date.now(), { cache: "no-store" });
+    const ipResponseObj = await ipResponse.json();
+    var ipdataun = ipResponseObj.ip + '  <b>'+ipResponseObj.country+' ('+ipResponseObj.country_code+') </b>';
+    document.getElementById('otipdata').innerHTML = ipdataun;
+
+    const cfIPresponse = await fetch('https://ipv4.icanhazip.com/?nocache=' + Date.now(), { cache: "no-store" });
+    const cfIP = await cfIPresponse.text();
+    const cfResponse = await fetch('https://ipwho.is/' + cfIP + '?nocache=' + Date.now(), { cache: "no-store" });
+    const cfResponseObj = await cfResponse.json();
+    var ipdatacf = cfIP + '  <b>'+cfResponseObj.country+' ('+cfResponseObj.country_code+') </b>';
+    document.getElementById('clipdata').innerHTML = ipdatacf; //parse
+
+  }
 
   const closeQR = () => {
           	 let qrcodeContainer = document.getElementById("qrcode-container");
