@@ -645,13 +645,13 @@ async function AdvancedConfig() {
     DNS, DoH, and ECH values are exported separately as client settings because their support is not consistent in standard VLESS share links.
   </div>
   <div class="help">
-  <b>${atob('UHJveHlJUA')} Notice</b>
+  <b>ProxyIP Notice</b>
   <br />
-  * you can use multiple IP separate with comma (,) like  [ <i>141.148.187.195</i><b>,</b><i>129.146.46.164</i> ]. system will choose one randomly for every request.
+  * Enter one or more IP addresses or domains separated by commas. The Worker randomly selects a fallback candidate when needed.
   <br />
-  * you can use domain directly like [ <i>${pxipdomain}</i> ].
+  * Community pool candidates can change or become unavailable; verify them with the ProxyIP checker before relying on them.
   <br />
-  * this IP will use just on servers and sites using Cloudflare. for other site like (youtube) system use random ip and cant change.
+  * ProxyIP is a fallback for connections to Cloudflare edge destinations, not a universal proxy for every website.
   </div>
   <div class="line">
 
