@@ -1156,6 +1156,16 @@ function generate(){
                 });
             });
     }
+// Expose handlers for the inline onclick/onchange attributes used by this page.
+  window.GetIPs = GetIPs;
+  window.generate = generate;
+  window.copyToClipboard = copyToClipboard;
+  window.openQR = openQR;
+  window.closeQR = closeQR;
+  window.chkaddress = chkaddress;
+  window.cstm = cstm;
+  window.tnlcnfgenerate = tnlcnfgenerate;
+
 load_defalt();
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
