@@ -813,17 +813,18 @@ function chkaddress(){
     cstm();
 }
 function splitInputList(value){
-  return (value || "").split(/[\n,;]+/).map(item => item.trim()).filter(Boolean);
+  return String(value || "").split(String.fromCharCode(10)).join(",").split(",").join(";").split(";").map(item => item.trim()).filter(Boolean);
 }
 function isIPv4Address(value){
-  return /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/.test(value);
+  const parts = String(value || "").split(".");
+  return parts.length === 4 && parts.every(part => /^\d{1,3}$/.test(part) && Number(part) >= 0 && Number(part) <= 255);
 }
 function isIPv6Address(value){
-  const raw = (value || "").replace(/^\[/, "").replace(/\]$/, "");
+  const raw = String(value || "").replace("[", "").replace("]", "");
   return raw.includes(":") && /^[0-9a-f:.]+$/i.test(raw);
 }
 function normaliseAddress(value){
-  const raw = (value || "").trim().replace(/^\[/, "").replace(/\]$/, "");
+  const raw = String(value || "").trim().replace("[", "").replace("]", "");
   return isIPv6Address(raw) ? "[" + raw + "]" : raw;
 }
 function filterAddressSuggestions(){
@@ -854,7 +855,7 @@ function generate(){
 
   const proxyPool = splitInputList(pxip.value);
   if (proxyPool.length && pxip.value.trim() !== defalt_pxip) {
-    const pxipath = btoa(proxyPool.join(",")).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+    const pxipath = btoa(proxyPool.join(",")).split("=").join("").split("+").join("-").split("/").join("_");
     cpath = fpath[Math.floor(Math.random() * fpath.length)] + "%2F" + pxipath + "%2F%3Fed%3D2048";
   }
 
@@ -862,7 +863,7 @@ function generate(){
   let cleanCandidates = splitInputList(cleanips.value);
   if(cleanCandidates.length){
     cleanCandidates = cleanCandidates.filter(candidate => {
-      const raw = candidate.replace(/^\[/, "").replace(/\]$/, "");
+      const raw = String(candidate).replace("[", "").replace("]", "");
       if(ipfamily.value === "ipv4" && isIPv6Address(raw)) return false;
       if(ipfamily.value === "ipv6" && isIPv4Address(raw)) return false;
       return true;
