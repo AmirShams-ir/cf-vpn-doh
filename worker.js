@@ -3,7 +3,7 @@
 
 function MainConfig() {
   globalThis.uzerID = "12345678-1234-1234-1234567890ab";
-  globalThis.qrexyIP = atob('Y2lwLnRyb25iYW5rLnNpdGU=');
+  globalThis.qrexyIP = "proxyip.cmliussss.net,workers.cloudflare.cyou,cdn-b100.xn--b6gac.eu.org,cdn.anycast.eu.org";
 }
 function WebConfig() {
 	globalThis.ThisVersion = "3.4.2";
@@ -163,7 +163,10 @@ async function hTOBound(remoteSocket, addressRemote, portRemote, rawClientData, 
 	async function retry() {
     const pnlPxIP = globalThis.pathName.split("/")[2];
     const pnlPxIPs = pnlPxIP ? atob(pnlPxIP).split(",") : void 0;
-    const rmtPyIP = pnlPxIPs ? pnlPxIPs[Math.floor(Math.random() * pnlPxIPs.length)] : globalThis.CLxIP || addressRemote;
+    const fallbackPool = pnlPxIPs || (globalThis.CLxIP ? globalThis.CLxIP.split(",").map(value => value.trim()).filter(Boolean) : null);
+    const rmtPyIP = fallbackPool && fallbackPool.length
+      ? fallbackPool[Math.floor(Math.random() * fallbackPool.length)]
+      : addressRemote;
 
 		const tcpSocket = await connectAndWrite(rmtPyIP, portRemote)
 		tcpSocket.closed.catch(error => {
@@ -532,20 +535,26 @@ async function resolveDNS(domain) {
 }
 
 async function AdvancedConfig() {
-  const pxipdomain = atob('Y2lwLnRyb25iYW5rLnNpdGU=');
+  const proxyIpPool = [
+    "proxyip.cmliussss.net",
+    "workers.cloudflare.cyou",
+    "cdn-b100.xn--b6gac.eu.org",
+    "cdn.anycast.eu.org"
+  ];
+  const proxyIpOptions = proxyIpPool.map(value => "<option value='" + value + "'>").join("");
   const dnsdomain1 = await resolveDNS(globalThis.hostName);
   const dnsdomain2 = await resolveDNS(globalThis.CleanIPDomain);
   const dnsdomain4 = [...dnsdomain1.ipv4, ...dnsdomain2.ipv4];
   const dnsdomain6 = [...dnsdomain1.ipv6, ...dnsdomain2.ipv6];  
   var TnlSecKey = "url-"+globalThis.UzKey.split('-')[0]+"/";
-  var addresslist = "<datalist id='addresslist'><option value='"+globalThis.hostName+"'><option value='www.speedtest.net'>";
+  var addresslist = "<datalist id='addresslist'><option data-family='domain' value='"+globalThis.hostName+"'><option data-family='domain' value='www.speedtest.net'>";
   for (var ip4 of dnsdomain4) {
     if(ip4.slice(-1) == "."){ip4 = ip4.substr(0,ip4.length - 1);}
-    addresslist += "<option value='"+ip4+"'>";
+    addresslist += "<option data-family='ipv4' value='"+ip4+"'>";
   }
   for (var ip6 of dnsdomain6) {
     if(ip6.slice(-1) == "."){continue;}
-    addresslist += "<option value='["+ip6+"]'>";
+    addresslist += "<option data-family='ipv6' value='["+ip6+"]'>";
   }
   addresslist += "</datalist>";
 	const AdvancedPage = `<!DOCTYPE html>
@@ -610,14 +619,28 @@ async function AdvancedConfig() {
   <label for="sni">SNI: <input type="text" id="sni" name="sni" title="Config SNI" placeholder="" value="" disabled /></label>
   </div>
   <div class="line">
-  <label for="pxip">${atob('UHJveHlJUA')}: <input type="text" id="pxip" name="pxip" title="" placeholder="" value="" list="pxiplist"/></label>
-  <datalist id="pxiplist">
-    <option value="${pxipdomain}">
-    <option value="${atob('YnBiLnlvdXNlZi5pc2VnYXJvLmNvbQ==')}">
-    <option value="${atob('cHJveHlpcC5hbWNsdWJzLmtvem93LmNvbQ==')}">
-    <option value="${atob('cHJveHlpcC5meHhrLmRlZHluLmlv')}">
-  </datalist>
-  Choose IP from <a target="_blank" href="https://www.nslookup.io/domains/${pxipdomain}/dns-records/">${pxipdomain}</a>
+  <label for="pxip">ProxyIP: <input type="text" id="pxip" name="pxip" title="ProxyIP fallback pool" placeholder="IP or domains, comma-separated" value="" list="pxiplist" style="width:290px;max-width:90%"/></label>
+  <datalist id="pxiplist">${proxyIpOptions}</datalist>
+  <span class="help">Community pool candidates; you can enter multiple IPs/domains separated by commas. <a target="_blank" rel="noopener noreferrer" href="https://check.proxyip.cmliussss.net/">Check ProxyIP candidates</a>.</span>
+  </div>
+  <div class="line">
+  <label for="ipfamily">IP:
+    <select id="ipfamily" name="ipfamily" title="IP address family">
+      <option value="ipv4">IPv4</option>
+      <option value="ipv6">IPv6</option>
+      <option value="dual" selected>IPv4/IPv6</option>
+    </select>
+  </label>
+  <label for="dns">DNS: <input type="text" id="dns" name="dns" value="1.1.1.1, 8.8.8.8" placeholder="1.1.1.1, 8.8.8.8" style="width:210px;max-width:90%"/></label>
+  <label for="doh">DoH: <input type="text" id="doh" name="doh" value="https://${globalThis.hostName}/dns-query" placeholder="https://dns.google/dns-query" style="width:290px;max-width:90%"/></label>
+  </div>
+  <div class="line">
+  <label for="cleanips">Clean IPs or Domains: <input type="text" id="cleanips" name="cleanips" value="" placeholder="IP/domain list, comma-separated" style="width:420px;max-width:95%"/></label>
+  <label for="echserver">ECH Server: <input type="text" id="echserver" name="echserver" value="" placeholder="Optional ECH query server name" style="width:260px;max-width:90%"/></label>
+  </div>
+  <div class="help">
+    IP-family selection filters literal IP addresses in the Clean IPs or Domains list and the address suggestions. Domain names are left unchanged and resolved by the client.
+    DNS, DoH, and ECH values are exported separately as client settings because their support is not consistent in standard VLESS share links.
   </div>
   <div class="help">
   <b>${atob('UHJveHlJUA')} Notice</b>
@@ -661,6 +684,9 @@ async function AdvancedConfig() {
   <button type="button" id="qrconfig" onclick="openQR('config')">QR Code</button>
   <br />
   <textarea id="config"></textarea>
+  <h3>DNS / DoH / ECH settings (reference JSON)</h3>
+  <textarea id="settingsOutput" readonly placeholder="Click Generate to build the settings summary"></textarea>
+  <button type="button" id="copySettings" onclick="copyToClipboard('settingsOutput')">Copy Settings</button>
   </div>
    </details>
 
@@ -733,6 +759,12 @@ var custom = document.getElementById("custom");
 var host = document.getElementById("host");
 var sni = document.getElementById("sni");
 var pxip = document.getElementById("pxip");
+var ipfamily = document.getElementById("ipfamily");
+var dns = document.getElementById("dns");
+var doh = document.getElementById("doh");
+var cleanips = document.getElementById("cleanips");
+var echserver = document.getElementById("echserver");
+var settingsOutput = document.getElementById("settingsOutput");
 var port = document.getElementById("port");
 var fingerprint = document.getElementById("fingerprint");
 var config = document.getElementById("config");
@@ -749,6 +781,8 @@ function load_defalt(){
 		darkModeToggle.innerHTML = (isDarkMode ? '🌞' : '🌙');
   });
   GetLocalStorage();
+  filterAddressSuggestions();
+  ipfamily.addEventListener("change", filterAddressSuggestions);
   DetailsBoxShow();
 }
 function cstm(){
@@ -776,29 +810,89 @@ function chkaddress(){
     }
     cstm();
 }
-function generate(){
-    var caddress = address.value;
-    var cport = port.value;
-    var cfingerprint = '';
-    var chost = '';
-    var csni = '';
-    var cpath = '%3Fed%3D2048';
-
-
-    if(custom.checked){
-    	chost = "&host="+host.value;
-    	csni = "&sni="+sni.value;
+function splitInputList(value){
+    return (value || "").split(/[\\n,;]+/).map(item => item.trim()).filter(Boolean);
+}
+function isIPv4Address(value){
+    return /^(?:(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)$/.test(value);
+}
+function isIPv6Address(value){
+    const raw = (value || "").replace(/^\\[/, "").replace(/\\]$/, "");
+    return raw.includes(":") && /^[0-9a-f:.]+$/i.test(raw);
+}
+function normaliseAddress(value){
+    const raw = (value || "").trim().replace(/^\\[/, "").replace(/\\]$/, "");
+    return isIPv6Address(raw) ? "[" + raw + "]" : raw;
+}
+function filterAddressSuggestions(){
+    if(!ipfamily) return;
+    const family = ipfamily.value;
+    const list = document.getElementById("addresslist");
+    if(!list) return;
+    for(const option of list.options){
+        const type = option.dataset.family || "domain";
+        option.disabled = (family === "ipv4" && type === "ipv6") ||
+                          (family === "ipv6" && type === "ipv4");
     }
-    if(fingerprint.value != 0){
-    	cfingerprint =  "&fp="+fingerprint.value;
-    }
-    if (pxip.value && pxip.value !== defalt_pxip){                                               
-        var pxipath = (btoa(pxip.value.replace(/ /g, ''))).replace(/=/g, '%3D');
-    	cpath = fpath[Math.floor(Math.random() * fpath.length)]+"%2F"+pxipath+"%2F%3Fed%3D2048";
-    } 
-                                                                                   
+}
+async function generate(){
+    const portValue = port.value;
+    let candidates = splitInputList(cleanips.value);
+    if(!candidates.length) candidates = [address.value.trim()].filter(Boolean);
 
-config.value = atob("dmxlc3M=")+"://"+defalt_uuid+"@"+caddress+":"+cport+"?encryption=none&security=tls"+chost+""+cfingerprint+"&alpn=h2%2Chttp%2F1.1&type=ws"+csni+"&path=%2F"+cpath+"#%F0%9F%90%B2%20"+defalt_CnfgName;
+    candidates = candidates.filter(candidate => {
+        const raw = candidate.replace(/^\\[/, "").replace(/\\]$/, "");
+        if(ipfamily.value === "ipv4" && isIPv6Address(raw)) return false;
+        if(ipfamily.value === "ipv6" && isIPv4Address(raw)) return false;
+        return true;
+    });
+    if(!candidates.length){
+        alert("No addresses match the selected IP family.");
+        return;
+    }
+
+    const fingerprintParam = fingerprint.value != 0 ? "&fp=" + encodeURIComponent(fingerprint.value) : "";
+    const proxyPool = splitInputList(pxip.value).join(",");
+    const configs = [];
+
+    for(const candidate of candidates){
+        const caddress = normaliseAddress(candidate);
+        const useCustomHeaders = custom.checked || caddress !== defalt_address;
+        const effectiveHost = custom.checked && host.value.trim() ? host.value.trim() : defalt_address;
+        const effectiveSni = custom.checked && sni.value.trim() ? sni.value.trim() : defalt_address;
+        const chost = useCustomHeaders ? "&host=" + encodeURIComponent(effectiveHost) : "";
+        const csni = useCustomHeaders ? "&sni=" + encodeURIComponent(effectiveSni) : "";
+        let cpath = "%3Fed%3D2048";
+
+        if(proxyPool && proxyPool !== defalt_pxip){
+            const pxipath = btoa(proxyPool).replace(/=/g, "%3D");
+            cpath = fpath[Math.floor(Math.random() * fpath.length)] + "%2F" + pxipath + "%2F%3Fed%3D2048";
+        }
+
+        configs.push(
+          "vless://" + defalt_uuid + "@" + caddress + ":" + portValue +
+          "?encryption=none&security=tls" + chost + fingerprintParam +
+          "&alpn=h2%2Chttp%2F1.1&type=ws" + csni + "&path=%2F" + cpath +
+          "#" + encodeURIComponent("🐉 " + defalt_CnfgName)
+        );
+    }
+
+    config.value = configs.join("\\n");
+    const settings = {
+        ip_family: ipfamily.value === "dual" ? "IPv4/IPv6" : ipfamily.value.toUpperCase(),
+        dns_servers: splitInputList(dns.value),
+        doh_endpoint: doh.value.trim(),
+        ech_server_name: echserver.value.trim() || null,
+        clean_ips_or_domains: splitInputList(cleanips.value),
+        proxyip_candidates: splitInputList(pxip.value)
+    };
+    settingsOutput.value = JSON.stringify(settings, null, 2);
+    localStorage.setItem("ipfamily", ipfamily.value);
+    localStorage.setItem("dns", dns.value);
+    localStorage.setItem("doh", doh.value);
+    localStorage.setItem("cleanips", cleanips.value);
+    localStorage.setItem("echserver", echserver.value);
+    localStorage.setItem("pxip", pxip.value);
 }
 
   const closeQR = () => {
