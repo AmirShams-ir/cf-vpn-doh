@@ -1,0 +1,15 @@
+name = "cf-vpn-doh"
+main = "index.js"
+compatibility_date = "2026-10-12"
+workers_dev = true
+
+# A single Worker serves both the VPN proxy and DNS-over-HTTPS.
+# Keep the DOH endpoint at /dns-query and let all other paths
+# fall through to the VPN/configuration handler.
+
+[placement]
+mode = "smart"
+
+[vars]
+# UUID and PROXYIP can be overridden securely in Cloudflare dashboard.
+# Do not put secrets in this file.
