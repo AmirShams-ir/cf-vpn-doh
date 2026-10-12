@@ -1,5 +1,18 @@
 # CF-VPN + CF-DOH
 
+## Advanced Config Generator
+
+The workspace at `/<UUID>` now includes:
+
+- **IP family:** IPv4, IPv6, or IPv4/IPv6. The selection filters literal IP candidates and address suggestions; hostnames are left as hostnames so the client resolves them.
+- **DNS and DoH:** editable resolver values shown in the accompanying settings JSON.
+- **Clean IPs or Domains:** enter a comma-, semicolon-, or line-separated list to generate one VLESS profile per address. When a clean address is used, the Worker hostname is retained for TLS SNI and the WebSocket Host header by default.
+- **ECH Server:** an optional ECH query-server name, included in the accompanying settings JSON for use in compatible clients.
+- **ProxyIP pool:** defaults to a comma-separated community candidate pool and selects a candidate randomly for fallback connections. These are community-hosted endpoints, not a Cloudflare guarantee; check candidates before relying on them.
+
+The primary **VLESS share link** does not encode DNS resolver preferences or ECH consistently across clients. The separate **DNS / DoH / ECH settings JSON** is therefore a reference for client-side configuration rather than a complete, automatically imported client config. ECH support depends on the client and core version.
+
+
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/AmirShams-ir/CF-VPN)
 
 **One Worker for Cloudflare edge proxy configuration and DNS-over-HTTPS.**
