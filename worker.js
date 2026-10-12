@@ -1121,14 +1121,14 @@ function generate(){
       let setconfig = {};
         setconfig.name = getconfig.includes("#") ? decodeURIComponent(getconfig.match(/#([^#]*)/)[1]) : null;
       
-        setconfig.protocol = getconfig.match(/(.*?):\\/\\//)[1]; //protocol  ["protocol"]
-        setconfig.id = getconfig.match(/\\:\\/\\/(.*?)\\@/)[1];
+        setconfig.protocol = getconfig.match(/^(.*?):\/\//)[1]; // protocol
+        setconfig.id = getconfig.match(/^.*?:\/\/(.*?)@/)[1];
         setconfig.address = getconfig.match(/@([a-z0-9.-]{2,}):/)[1];
         setconfig.port = getconfig.match(/:([0-9]{2,})\\?/)[1];
 
         if(!getconfig.includes("#")){getconfig += "#";}
         if(getconfig.includes("%22")){getconfig = getconfig.replaceAll("%22","%27");}
-        let setdata = JSON.parse(decodeURIComponent('{ "'+getconfig.replaceAll('&','","').replaceAll('=','":"').match(/\\?(.*?)#/)[1]+'" }'));
+        let setdata = JSON.parse(decodeURIComponent('{ "'+getconfig.replaceAll('&','","').replaceAll('=','":"').match(/\?(.*?)#/)[1]+'" }'));
 
         return { "base":{...setconfig,...setdata}, "data":setdata};
     }
