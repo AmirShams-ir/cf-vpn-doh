@@ -1118,19 +1118,31 @@ function generate(){
 
 
     function GetVlConfig(getconfig){
-      let setconfig = {};
-        setconfig.name = getconfig.includes("#") ? decodeURIComponent(getconfig.match(/#([^#]*)/)[1]) : null;
-      
-        setconfig.protocol = getconfig.match(/^(.*?):\/\//)[1]; // protocol
-        setconfig.id = getconfig.match(/^.*?:\/\/(.*?)@/)[1];
-        setconfig.address = getconfig.match(/@([a-z0-9.-]{2,}):/)[1];
-        setconfig.port = getconfig.match(/:([0-9]{2,})\\?/)[1];
-
-        if(!getconfig.includes("#")){getconfig += "#";}
-        if(getconfig.includes("%22")){getconfig = getconfig.replaceAll("%22","%27");}
-        let setdata = JSON.parse(decodeURIComponent('{ "'+getconfig.replaceAll('&','","').replaceAll('=','":"').match(/\?(.*?)#/)[1]+'" }'));
-
-        return { "base":{...setconfig,...setdata}, "data":setdata};
+      const hashIndex = getconfig.indexOf("#");
+      const name = hashIndex >= 0 ? decodeURIComponent(getconfig.slice(hashIndex + 1)) : null;
+      const noHash = hashIndex >= 0 ? getconfig.slice(0, hashIndex) : getconfig;
+      const protocol = noHash.slice(0, noHash.indexOf("://"));
+      const afterScheme = noHash.slice(noHash.indexOf("://") + 3);
+      const atIndex = afterScheme.indexOf("@");
+      const id = atIndex >= 0 ? afterScheme.slice(0, atIndex) : "";
+      const afterAt = atIndex >= 0 ? afterScheme.slice(atIndex + 1) : afterScheme;
+      const colonIndex = afterAt.lastIndexOf(":");
+      const address = colonIndex >= 0 ? afterAt.slice(0, colonIndex) : afterAt;
+      const queryIndex = noHash.indexOf("?");
+      const port = queryIndex >= 0 ? address.slice(address.lastIndexOf(":") + 1) : "443";
+      const query = queryIndex >= 0 ? noHash.slice(queryIndex + 1) : "";
+      const baseAddress = queryIndex >= 0 ? noHash.slice(noHash.indexOf("@") + 1, queryIndex).replace(/:[0-9]+$/, "") : address.replace(/:[0-9]+$/, "");
+      const data = {};
+      for (const part of query.split("&")) {
+        if (!part) continue;
+        const index = part.indexOf("=");
+        if (index < 0) continue;
+        data[part.slice(0, index)] = decodeURIComponent(part.slice(index + 1));
+      }
+      return {
+        base: {...data, protocol, id, address: baseAddress, port, name, security: data.security || null, type: data.type || null, path: data.path || "/"},
+        data
+      };
     }
 
     function GetLocalStorage(){
