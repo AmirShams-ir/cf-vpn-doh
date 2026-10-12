@@ -684,6 +684,7 @@ async function AdvancedConfig() {
   <button type="button" id="generate" onclick="generate()">Generate</button>
   <button type="button" id="copy" onclick="copyToClipboard('config')">Copy Config</button>
   <button type="button" id="qrconfig" onclick="openQR('config')">QR Code</button>
+  <button type="button" id="jsonconfig" onclick="downloadJSON()">Export JSON</button>
   <br />
   <textarea id="config"></textarea>
   <h3>DNS / DoH / ECH settings (reference JSON)</h3>
@@ -804,6 +805,25 @@ function copyToClipboard(elementId) {
          .catch(err => console.error('Failed to copy text:', err));
 }
 
+function downloadJSON(){
+  // Generate first so the JSON always reflects current form values.
+  generate();
+  if(!window.latestConfigJSON) {
+    alert("Generate a configuration before exporting JSON.");
+    return;
+  }
+  const jsonText = JSON.stringify(window.latestConfigJSON, null, 2);
+  const blob = new Blob([jsonText], { type: "application/json;charset=utf-8" });
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = "config.json";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
 function chkaddress(){
     if (address.value !== defalt_address){
     	 custom.checked = true;
@@ -892,6 +912,13 @@ function generate(){
     ech_server_name: echserver.value.trim() || null,
     clean_ips_or_domains: cleanCandidates,
     proxyip_candidates: proxyPool
+  };
+  window.latestConfigJSON = {
+    generated_at: new Date().toISOString(),
+    worker_hostname: defalt_address,
+    uuid: defalt_uuid,
+    vless_configs: config.value.split(String.fromCharCode(10)).filter(Boolean),
+    settings
   };
   settingsOutput.value = JSON.stringify(settings, null, 2);
   for(const id of ["ipfamily", "dns", "doh", "cleanips", "echserver", "pxip"]){
@@ -1173,6 +1200,7 @@ function generate(){
   window.GetIPs = GetIPs;
   window.generate = generate;
   window.copyToClipboard = copyToClipboard;
+  window.downloadJSON = downloadJSON;
   window.openQR = openQR;
   window.closeQR = closeQR;
   window.chkaddress = chkaddress;
