@@ -880,7 +880,7 @@ function generate(){
         "?encryption=none&security=tls&host=" + encodeURIComponent(selectedHost) +
         cfingerprint + "&alpn=h2%2Chttp%2F1.1&type=ws&sni=" + encodeURIComponent(selectedSni) +
         "&path=%2F" + cpath + "#" + encodeURIComponent("🐉 " + defalt_CnfgName);
-    }).join("\n");
+    }).join(String.fromCharCode(10));
   } else {
     config.value = atob("dmxlc3M=")+"://"+defalt_uuid+"@"+caddress+":"+cport+"?encryption=none&security=tls"+chost+cfingerprint+"&alpn=h2%2Chttp%2F1.1&type=ws"+csni+"&path=%2F"+cpath+"#%F0%9F%90%B2%20"+defalt_CnfgName;
   }
