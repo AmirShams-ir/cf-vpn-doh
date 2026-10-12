@@ -811,17 +811,17 @@ function chkaddress(){
     cstm();
 }
 function splitInputList(value){
-    return (value || "").split(/[\\n,;]+/).map(item => item.trim()).filter(Boolean);
+    return (value || "").split(/[\n,;]+/).map(item => item.trim()).filter(Boolean);
 }
 function isIPv4Address(value){
-    return /^(?:(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)$/.test(value);
+    return /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/.test(value);
 }
 function isIPv6Address(value){
-    const raw = (value || "").replace(/^\\[/, "").replace(/\\]$/, "");
+    const raw = (value || "").replace(/^\[/, "").replace(/\]$/, "");
     return raw.includes(":") && /^[0-9a-f:.]+$/i.test(raw);
 }
 function normaliseAddress(value){
-    const raw = (value || "").trim().replace(/^\\[/, "").replace(/\\]$/, "");
+    const raw = (value || "").trim().replace(/^\[/, "").replace(/\]$/, "");
     return isIPv6Address(raw) ? "[" + raw + "]" : raw;
 }
 function filterAddressSuggestions(){
@@ -841,7 +841,7 @@ async function generate(){
     if(!candidates.length) candidates = [address.value.trim()].filter(Boolean);
 
     candidates = candidates.filter(candidate => {
-        const raw = candidate.replace(/^\\[/, "").replace(/\\]$/, "");
+        const raw = candidate.replace(/^\[/, "").replace(/\]$/, "");
         if(ipfamily.value === "ipv4" && isIPv6Address(raw)) return false;
         if(ipfamily.value === "ipv6" && isIPv4Address(raw)) return false;
         return true;
@@ -877,7 +877,7 @@ async function generate(){
         );
     }
 
-    config.value = configs.join("\\n");
+    config.value = configs.join("\n");
     const settings = {
         ip_family: ipfamily.value === "dual" ? "IPv4/IPv6" : ipfamily.value.toUpperCase(),
         dns_servers: splitInputList(dns.value),
